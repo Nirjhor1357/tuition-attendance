@@ -28,21 +28,29 @@ function ExcelImporter({ onDataImported }) {
         return;
       }
 
-      // Detect date column and student columns
+      // Detect date column - check column names and content
       const firstRow = data[0];
       const columns = Object.keys(firstRow);
       
-      // Find date columns (usually contain dates)
-      const datePattern = /date|डेट/i;
-      const dateColumns = columns.filter(col => datePattern.test(col));
+      // Find date column by name patterns
+      const datePattern = /date|tarikh|তারিখ|डेट|день|fecha|ngày|ວັນທີ|දින/i;
+      let dateCol = columns.find(col => datePattern.test(col));
       
-      if (dateColumns.length === 0) {
-        setMessage({ type: 'error', text: 'No date column found. Excel should have a "Date" column.' });
-        setIsLoading(false);
-        return;
+      // If no date column found by name, try to detect by content (first column usually has dates)
+      if (!dateCol) {
+        dateCol = columns[0]; // Default to first column
+        // Check if first column has date-like values
+        const firstValue = data[0][dateCol];
+        if (firstValue && (typeof firstValue === 'number' || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|^\d{4}[-\/]\d{2}[-\/]\d{2}/.test(String(firstValue)))) {
+          // Looks like a date column
+        } else {
+          setMessage({ 
+            type: 'warning', 
+            text: `Could not find a date column. Using "${dateCol}" as the date column. If this is incorrect, please rename your date column to "Date".` 
+          });
+        }
       }
 
-      const dateCol = dateColumns[0];
       const studentColumns = columns.filter(col => col !== dateCol && !datePattern.test(col));
 
       if (studentColumns.length === 0) {
