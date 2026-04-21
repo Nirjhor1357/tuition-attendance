@@ -195,7 +195,7 @@ function App() {
 
         <footer className="app-credit-footer">
           <p>
-            Created by nowsh | Licensed under AGPL-3.0 | Keep attribution in derived works.
+            Created by NIRJHOR | Licensed under AGPL-3.0 | Keep attribution in derived works.
           </p>
         </footer>
       </div>

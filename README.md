@@ -27,7 +27,7 @@ A React-based tuition attendance app with local database storage (IndexedDB via 
 
 ## Attribution and License
 
-Copyright (c) 2026 nowsh
+Copyright (c) 2026 NIRJHOR
 
 This project is licensed under AGPL-3.0.
 
