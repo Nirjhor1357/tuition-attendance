@@ -91,6 +91,10 @@ function App() {
         <p className="subtitle">Manage and track student attendance efficiently</p>
       </header>
 
+      <div className="warning-banner">
+        <strong>⚠️ Important:</strong> Your data is stored locally in your browser. If you clear your browser cache/cookies, all data will be deleted. Regularly export your data as backup.
+      </div>
+
       <div className="app-container">
         <nav className="tabs">
           <button 

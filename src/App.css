@@ -27,6 +27,20 @@
   opacity: 0.95;
 }
 
+.warning-banner {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 15px 20px;
+  margin: 0;
+  color: #856404;
+  font-size: 0.95em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.warning-banner strong {
+  font-weight: 600;
+}
+
 .app-container {
   flex: 1;
   max-width: 1200px;
