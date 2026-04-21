@@ -6,6 +6,67 @@ function AttendanceTable({ attendance, students, onDeleteAttendance }) {
 
   const studentMap = Object.fromEntries(students.map((s) => [s.id, s.name]));
 
+  const openStudentWindow = (studentId) => {
+    const studentName = studentMap[studentId] || 'Unknown';
+    const studentRecords = attendance
+      .filter((record) => record.studentId === studentId)
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+    const detailWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!detailWindow) return;
+
+    const totalClasses = studentRecords.length;
+    const firstDate = totalClasses ? new Date(studentRecords[0].date).toLocaleDateString() : '-';
+    const lastDate = totalClasses ? new Date(studentRecords[studentRecords.length - 1].date).toLocaleDateString() : '-';
+
+    detailWindow.document.write(`
+      <html>
+        <head>
+          <title>${studentName} - Attendance</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #222; background: #f7f8fc; }
+            h1, h2, p, li, td, th { color: #222; }
+            .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+            .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+            .stat { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; border-radius: 10px; padding: 14px; }
+            table { width: 100%; border-collapse: collapse; background: #fff; }
+            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+            th { background: #667eea; color: #fff; }
+            tr:nth-child(even) { background: #f8f9fa; }
+          </style>
+        </head>
+        <body>
+          <h1>${studentName}</h1>
+          <div class="stats">
+            <div class="stat"><strong>Total Classes</strong><br>${totalClasses}</div>
+            <div class="stat"><strong>First Attendance</strong><br>${firstDate}</div>
+            <div class="stat"><strong>Last Attendance</strong><br>${lastDate}</div>
+          </div>
+          <div class="card">
+            <h2>Attendance Records</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${studentRecords.map((record) => `
+                  <tr>
+                    <td>${new Date(record.date).toLocaleDateString()}</td>
+                    <td>${record.notes || '-'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </body>
+      </html>
+    `);
+    detailWindow.document.close();
+  };
+
   // Filter attendance records
   const filteredAttendance = attendance.filter((record) => {
     if (filterDate && record.date !== filterDate) return false;
@@ -83,7 +144,15 @@ function AttendanceTable({ attendance, students, onDeleteAttendance }) {
               {filteredAttendance.map((record) => (
                 <tr key={record.id}>
                   <td>{new Date(record.date).toLocaleDateString()}</td>
-                  <td>{studentMap[record.studentId] || 'Unknown'}</td>
+                  <td>
+                    <button
+                      className="student-link"
+                      onClick={() => openStudentWindow(record.studentId)}
+                      type="button"
+                    >
+                      {studentMap[record.studentId] || 'Unknown'}
+                    </button>
+                  </td>
                   <td>{record.notes || '-'}</td>
                   <td>
                     <button

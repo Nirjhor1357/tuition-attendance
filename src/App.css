@@ -80,6 +80,22 @@
   padding: 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   min-height: 400px;
+  color: #222;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content p,
+.content label,
+.content td,
+.content th,
+.content li {
+  color: #222;
+}
+
+.content p {
+  color: #444;
 }
 
 /* Statistics */
@@ -129,6 +145,14 @@
   margin-bottom: 8px;
   font-weight: 600;
   color: #333;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea,
+.btn,
+.student-link {
+  color: #222;
 }
 
 .form-field input,
@@ -226,6 +250,21 @@ th {
 td {
   padding: 12px 15px;
   border: 1px solid #ddd;
+}
+
+.student-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: #667eea;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.student-link:hover {
+  color: #764ba2;
 }
 
 tbody tr:nth-child(even) {
