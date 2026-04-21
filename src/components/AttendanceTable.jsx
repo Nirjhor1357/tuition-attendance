@@ -12,8 +12,9 @@ function AttendanceTable({ attendance, students, onDeleteAttendance }) {
       .filter((record) => record.studentId === studentId)
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
 
-    const detailWindow = window.open('', '_blank', 'width=900,height=700');
+    const detailWindow = window.open('', 'student-attendance-detail', 'width=900,height=700');
     if (!detailWindow) return;
+    detailWindow.focus();
 
     const totalClasses = studentRecords.length;
     const firstDate = totalClasses ? new Date(studentRecords[0].date).toLocaleDateString() : '-';

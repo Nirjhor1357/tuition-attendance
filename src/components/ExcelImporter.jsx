@@ -41,7 +41,7 @@ function ExcelImporter({ onDataImported }) {
         dateCol = columns[0]; // Default to first column
         // Check if first column has date-like values
         const firstValue = data[0][dateCol];
-        if (firstValue && (typeof firstValue === 'number' || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}|^\d{4}[-\/]\d{2}[-\/]\d{2}/.test(String(firstValue)))) {
+        if (firstValue && (typeof firstValue === 'number' || /\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|^\d{4}[-/]\d{2}[-/]\d{2}/.test(String(firstValue)))) {
           // Looks like a date column
         } else {
           setMessage({ 
@@ -82,7 +82,7 @@ function ExcelImporter({ onDataImported }) {
             dateStr = parsed.toISOString().split('T')[0];
           } else {
             // Try DD/MM/YYYY format
-            const parts = dateValue.split(/[-\/]/);
+            const parts = dateValue.split(/[-/]/);
             if (parts.length === 3) {
               const day = parts[0].padStart(2, '0');
               const month = parts[1].padStart(2, '0');
@@ -124,17 +124,14 @@ function ExcelImporter({ onDataImported }) {
               studentCount++;
             }
 
-            // Record attendance
-            try {
+            const exists = await attendanceAPI.hasAttendance(student.id, dateStr);
+            if (!exists) {
               await attendanceAPI.recordAttendance(
                 student.id,
                 dateStr,
                 ''
               );
               attendanceCount++;
-            } catch (err) {
-              // Skip if record already exists
-              console.log(`Skipped duplicate: ${studentName} on ${dateStr}`);
             }
           }
         }

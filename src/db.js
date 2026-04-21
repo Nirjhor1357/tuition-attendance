@@ -35,6 +35,10 @@ export const studentAPI = {
 // Attendance management functions
 export const attendanceAPI = {
   async recordAttendance(studentId, date, notes = '') {
+    if (!studentId || !date) {
+      throw new Error('Student and date are required to record attendance.');
+    }
+
     return db.attendance.add({
       studentId,
       date,
@@ -53,6 +57,16 @@ export const attendanceAPI = {
 
   async getAttendanceByStudent(studentId) {
     return db.attendance.where('studentId').equals(studentId).toArray();
+  },
+
+  async hasAttendance(studentId, date) {
+    const existing = await db.attendance
+      .where('studentId')
+      .equals(studentId)
+      .and((record) => record.date === date)
+      .first();
+
+    return Boolean(existing);
   },
 
 
@@ -77,8 +91,8 @@ export const analyticsAPI = {
   async getStudentAttendanceRate(studentId) {
     const records = await db.attendance.where('studentId').equals(studentId).toArray();
     if (records.length === 0) return 0;
-    const presentCount = records.filter(r => r.present).length;
-    return Math.round((presentCount / records.length) * 100);
+    // The data model only stores present records, so any stored record represents attendance.
+    return 100;
   },
 
 
@@ -98,6 +112,54 @@ export const analyticsAPI = {
     const records = await db.attendance.where('studentId').equals(studentId).toArray();
     return records.length;
   }
+};
+
+export const dataAPI = {
+  async replaceAllData(students = [], attendance = []) {
+    return db.transaction('rw', db.students, db.attendance, async () => {
+      await db.attendance.clear();
+      await db.students.clear();
+
+      const studentIdMap = new Map();
+
+      for (const student of students) {
+        const name = String(student?.name || '').trim();
+        if (!name) {
+          continue;
+        }
+
+        const newId = await db.students.add({
+          name,
+          createdAt: student.createdAt ? new Date(student.createdAt) : new Date(),
+          updatedAt: student.updatedAt ? new Date(student.updatedAt) : undefined,
+        });
+
+        studentIdMap.set(student.id, newId);
+      }
+
+      for (const record of attendance) {
+        const mappedStudentId = studentIdMap.get(record.studentId);
+        if (!mappedStudentId || !record?.date) {
+          continue;
+        }
+
+        await db.attendance.add({
+          studentId: mappedStudentId,
+          date: record.date,
+          notes: record.notes || '',
+          createdAt: record.createdAt ? new Date(record.createdAt) : new Date(),
+          updatedAt: record.updatedAt ? new Date(record.updatedAt) : undefined,
+        });
+      }
+    });
+  },
+
+  async deleteStudentAndAttendance(studentId) {
+    return db.transaction('rw', db.students, db.attendance, async () => {
+      await db.attendance.where('studentId').equals(studentId).delete();
+      await db.students.delete(studentId);
+    });
+  },
 };
 
 // Export database for advanced usage

@@ -1,6 +1,33 @@
 import React, { useRef, useState } from 'react';
-import { attendanceAPI, studentAPI } from '../db';
+import { attendanceAPI, dataAPI, studentAPI } from '../db';
 import ExcelImporter from './ExcelImporter';
+
+const parseCsvLine = (line) => {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  values.push(current.trim());
+  return values;
+};
 
 function ExportImport({ attendance, students, onDataImported }) {
   const fileInputRef = useRef(null);
@@ -68,35 +95,7 @@ function ExportImport({ attendance, students, onDataImported }) {
         return;
       }
 
-      // Clear existing data
-      const db = (await import('../db')).default;
-      await db.students.clear();
-      await db.attendance.clear();
-
-      // Import students
-      for (const student of data.students) {
-        await studentAPI.addStudent(student.name);
-      }
-
-      // Import attendance records
-      for (const record of data.attendance) {
-        // Find the newly created student with the same name
-        const studentData = data.students.find((s) => s.id === record.studentId);
-        if (studentData) {
-          const newStudent = (await studentAPI.getAllStudents()).find(
-            (s) => s.name === studentData.name
-          );
-          if (newStudent) {
-            await attendanceAPI.recordAttendance(
-              newStudent.id,
-              record.className,
-              record.date,
-              record.present,
-              record.notes
-            );
-          }
-        }
-      }
+      await dataAPI.replaceAllData(data.students, data.attendance);
 
       onDataImported();
       setMessage({
@@ -123,8 +122,20 @@ function ExportImport({ attendance, students, onDataImported }) {
 
     try {
       const text = await file.text();
-      const lines = text.split('\n');
-      const headers = lines[0].split(',').map((h) => h.trim());
+      const lines = text
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      if (lines.length < 2) {
+        setMessage({
+          type: 'error',
+          text: 'CSV file is empty or missing attendance rows.',
+        });
+        return;
+      }
+
+      const headers = parseCsvLine(lines[0]);
 
       // Validate CSV format
       const requiredColumns = [
@@ -143,24 +154,26 @@ function ExportImport({ attendance, students, onDataImported }) {
         return;
       }
 
+      const dateIdx = headers.findIndex((h) => h.includes('Date'));
+      const studentIdx = headers.findIndex((h) => h.includes('Student'));
+      const notesIdx = headers.findIndex((h) => h.includes('Notes'));
+
       // Parse CSV data
       const records = [];
       for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-        const values = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+        const values = parseCsvLine(lines[i]);
 
-        const dateIdx = headers.findIndex((h) => h.includes('Date'));
-        const studentIdx = headers.findIndex((h) => h.includes('Student'));
+        const date = values[dateIdx];
+        const studentName = values[studentIdx];
+        if (!date || !studentName) continue;
 
         records.push({
-          date: values[dateIdx],
-          studentName: values[studentIdx],
-          notes: values[headers.findIndex((h) => h.includes('Notes'))] || '',
+          date,
+          studentName,
+          notes: notesIdx >= 0 ? values[notesIdx] || '' : '',
         });
       }
 
-      // Import data
-      const db = (await import('../db')).default;
       const existingStudents = await studentAPI.getAllStudents();
       const uniqueStudentNames = [...new Set(records.map((r) => r.studentName))];
 
@@ -173,21 +186,26 @@ function ExportImport({ attendance, students, onDataImported }) {
 
       const allStudents = await studentAPI.getAllStudents();
 
+      let importedCount = 0;
       for (const record of records) {
         const student = allStudents.find((s) => s.name === record.studentName);
         if (student) {
-          await attendanceAPI.recordAttendance(
-            student.id,
-            record.date,
-            record.notes
-          );
+          const exists = await attendanceAPI.hasAttendance(student.id, record.date);
+          if (!exists) {
+            await attendanceAPI.recordAttendance(
+              student.id,
+              record.date,
+              record.notes
+            );
+            importedCount++;
+          }
         }
       }
 
       onDataImported();
       setMessage({
         type: 'success',
-        text: `Imported ${records.length} attendance records!`,
+        text: `Imported ${importedCount} new attendance records (${records.length - importedCount} duplicates skipped).`,
       });
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {

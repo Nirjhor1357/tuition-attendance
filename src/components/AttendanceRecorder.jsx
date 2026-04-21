@@ -30,10 +30,10 @@ function AttendanceRecorder({ students, onRecordAttendance }) {
       setNotes('');
       setSelectedStudents([]);
       setAttendanceDate(new Date().toISOString().split('T')[0]);
-      setMessage({ type: 'success', text: 'Attendance recorded successfully!' });
+      setMessage({ type: 'success', text: 'Attendance saved. Existing duplicate records were skipped.' });
       setTimeout(() => setMessage(''), 3000);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Error recording attendance' });
+    } catch {
+      setMessage({ type: 'error', text: 'Error recording attendance. Please try again.' });
     }
   };
 

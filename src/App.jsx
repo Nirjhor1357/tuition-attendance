@@ -1,33 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 import StudentManager from './components/StudentManager';
 import AttendanceRecorder from './components/AttendanceRecorder';
 import AttendanceTable from './components/AttendanceTable';
 import Statistics from './components/Statistics';
 import ExportImport from './components/ExportImport';
-import { studentAPI, attendanceAPI, analyticsAPI } from './db';
+import { studentAPI, attendanceAPI, analyticsAPI, dataAPI } from './db';
 
 function App() {
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState([]);
   const [stats, setStats] = useState({});
   const [activeTab, setActiveTab] = useState('record');
+  const [appMessage, setAppMessage] = useState('');
 
-  // Load initial data
-  useEffect(() => {
-    initializeData();
-  }, []);
-
-  const initializeData = async () => {
-    try {
-      await loadData();
-    } catch (error) {
-      console.error('Error initializing data:', error);
-    }
-  };
-
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const studentsData = await studentAPI.getAllStudents();
       const attendanceData = await attendanceAPI.getAllAttendance();
@@ -39,7 +26,13 @@ function App() {
     } catch (error) {
       console.error('Error loading data:', error);
     }
-  };
+  }, []);
+
+  // Load initial data
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadData();
+  }, [loadData]);
 
   const handleAddStudent = async (name) => {
     try {
@@ -47,27 +40,35 @@ function App() {
       await loadData();
     } catch (error) {
       console.error('Error adding student:', error);
+      setAppMessage({ type: 'error', text: 'Failed to add student. Please try again.' });
+      throw error;
     }
   };
 
   const handleDeleteStudent = async (id) => {
     try {
-      await studentAPI.deleteStudent(id);
-      await attendanceAPI.deleteAttendanceByStudent(id);
+      await dataAPI.deleteStudentAndAttendance(id);
       await loadData();
     } catch (error) {
       console.error('Error deleting student:', error);
+      setAppMessage({ type: 'error', text: 'Failed to delete student. Please try again.' });
+      throw error;
     }
   };
 
   const handleRecordAttendance = async (studentIds, date, notes = '') => {
     try {
       for (const studentId of studentIds) {
-        await attendanceAPI.recordAttendance(studentId, date, notes);
+        const exists = await attendanceAPI.hasAttendance(studentId, date);
+        if (!exists) {
+          await attendanceAPI.recordAttendance(studentId, date, notes);
+        }
       }
       await loadData();
     } catch (error) {
       console.error('Error recording attendance:', error);
+      setAppMessage({ type: 'error', text: 'Failed to record attendance. Please try again.' });
+      throw error;
     }
   };
 
@@ -77,6 +78,8 @@ function App() {
       await loadData();
     } catch (error) {
       console.error('Error deleting attendance:', error);
+      setAppMessage({ type: 'error', text: 'Failed to delete attendance record. Please try again.' });
+      throw error;
     }
   };
 
@@ -94,6 +97,12 @@ function App() {
       <div className="warning-banner">
         <strong>⚠️ Important:</strong> Your data is stored locally in your browser. If you clear your browser cache/cookies, all data will be deleted. Regularly export your data as backup.
       </div>
+
+      {appMessage && (
+        <div className={`message ${appMessage.type}`}>
+          {appMessage.text}
+        </div>
+      )}
 
       <div className="app-container">
         <nav className="tabs">

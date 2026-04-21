@@ -4,7 +4,7 @@ function StudentManager({ students, onAddStudent, onDeleteStudent }) {
   const [newStudentName, setNewStudentName] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!newStudentName.trim()) {
       setMessage({ type: 'error', text: 'Please enter a student name' });
       return;
@@ -15,17 +15,25 @@ function StudentManager({ students, onAddStudent, onDeleteStudent }) {
       return;
     }
 
-    onAddStudent(newStudentName.trim());
-    setNewStudentName('');
-    setMessage({ type: 'success', text: 'Student added successfully!' });
-    setTimeout(() => setMessage(''), 3000);
+    try {
+      await onAddStudent(newStudentName.trim());
+      setNewStudentName('');
+      setMessage({ type: 'success', text: 'Student added successfully!' });
+      setTimeout(() => setMessage(''), 3000);
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to add student' });
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('Are you sure you want to delete this student? This will also delete their attendance records.')) {
-      onDeleteStudent(id);
-      setMessage({ type: 'success', text: 'Student deleted successfully!' });
-      setTimeout(() => setMessage(''), 3000);
+      try {
+        await onDeleteStudent(id);
+        setMessage({ type: 'success', text: 'Student deleted successfully!' });
+        setTimeout(() => setMessage(''), 3000);
+      } catch {
+        setMessage({ type: 'error', text: 'Failed to delete student' });
+      }
     }
   };
 
