@@ -329,6 +329,5 @@ function ExportImport({ attendance, students, onDataImported }) {
     </div>
   );
 }
-}
 
 export default ExportImport;
