@@ -6,6 +6,7 @@ import AttendanceTable from './components/AttendanceTable';
 import Statistics from './components/Statistics';
 import ExportImport from './components/ExportImport';
 import { studentAPI, attendanceAPI, analyticsAPI } from './db';
+import preloadedAttendance from './data/preloadedAttendance.json';
 
 function App() {
   const [students, setStudents] = useState([]);
@@ -15,8 +16,55 @@ function App() {
 
   // Load initial data
   useEffect(() => {
-    loadData();
+    initializeData();
   }, []);
+
+  const initializeData = async () => {
+    try {
+      await seedPreloadedAttendance();
+      await loadData();
+    } catch (error) {
+      console.error('Error initializing data:', error);
+      await loadData();
+    }
+  };
+
+  const seedPreloadedAttendance = async () => {
+    if (!preloadedAttendance?.students?.length || !preloadedAttendance?.attendance?.length) {
+      return;
+    }
+
+    const existingStudents = await studentAPI.getAllStudents();
+    const studentMap = new Map(existingStudents.map((s) => [s.name.toLowerCase(), s.id]));
+
+    for (const student of preloadedAttendance.students) {
+      const name = String(student.name || '').trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (!studentMap.has(key)) {
+        const id = await studentAPI.addStudent(name);
+        studentMap.set(key, id);
+      }
+    }
+
+    const existingAttendance = await attendanceAPI.getAllAttendance();
+    const attendanceKeys = new Set(existingAttendance.map((r) => `${r.studentId}__${r.date}`));
+
+    for (const record of preloadedAttendance.attendance) {
+      const studentName = String(record.studentName || '').trim().toLowerCase();
+      const date = String(record.date || '').trim();
+      if (!studentName || !date) continue;
+
+      const studentId = studentMap.get(studentName);
+      if (!studentId) continue;
+
+      const key = `${studentId}__${date}`;
+      if (attendanceKeys.has(key)) continue;
+
+      await attendanceAPI.recordAttendance(studentId, date, record.notes || '');
+      attendanceKeys.add(key);
+    }
+  };
 
   const loadData = async () => {
     try {
