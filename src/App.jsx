@@ -158,7 +158,7 @@ function App() {
           </button>
         </nav>
 
-        <Statistics stats={stats} />
+        <Statistics stats={stats} students={students} attendance={attendance} />
 
         <div className="content">
           {activeTab === 'record' && (
