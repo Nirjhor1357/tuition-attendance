@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { attendanceAPI, studentAPI } from '../db';
+import ExcelImporter from './ExcelImporter';
 
 function ExportImport({ attendance, students, onDataImported }) {
   const fileInputRef = useRef(null);
@@ -310,17 +311,24 @@ function ExportImport({ attendance, students, onDataImported }) {
         </div>
       </div>
 
+      <hr style={{ margin: '30px 0', border: 'none', borderTop: '2px solid #ddd' }} />
+
+      <h3>📊 Import from Excel</h3>
+      <ExcelImporter onDataImported={onDataImported} />
+
       <div style={{ marginTop: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>
         <h3>ℹ️ Import Guidelines</h3>
         <ul>
           <li><strong>CSV Format:</strong> Must include columns: Date, Student Name, Notes (optional)</li>
           <li><strong>JSON Format:</strong> Must contain "students" and "attendance" arrays</li>
+          <li><strong>Excel Format:</strong> First column should be dates, other columns are student names. Mark attendance with ✓, Yes, P, or any value.</li>
           <li><strong>Duplicate Handling:</strong> New students will be added, attendance records will be appended</li>
           <li><strong>Data Validation:</strong> Invalid files will be rejected with an error message</li>
         </ul>
       </div>
     </div>
   );
+}
 }
 
 export default ExportImport;
