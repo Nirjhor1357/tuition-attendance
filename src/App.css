@@ -38,6 +38,21 @@
   gap: 20px;
 }
 
+.app-credit-footer {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.app-credit-footer p {
+  margin: 0;
+  color: #1f2937;
+  font-size: 0.92em;
+  font-weight: 600;
+}
+
 /* Tab Navigation */
 .tabs {
   display: flex;
