@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 function AttendanceRecorder({ students, onRecordAttendance }) {
-  const [className, setClassName] = useState('');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [notes, setNotes] = useState('');
@@ -16,11 +15,6 @@ function AttendanceRecorder({ students, onRecordAttendance }) {
   };
 
   const handleRecordAttendance = async () => {
-    if (!className.trim()) {
-      setMessage({ type: 'error', text: 'Please enter a class name' });
-      return;
-    }
-
     if (!attendanceDate) {
       setMessage({ type: 'error', text: 'Please select a date' });
       return;
@@ -32,8 +26,7 @@ function AttendanceRecorder({ students, onRecordAttendance }) {
     }
 
     try {
-      await onRecordAttendance(selectedStudents, className.trim(), attendanceDate, notes);
-      setClassName('');
+      await onRecordAttendance(selectedStudents, attendanceDate, notes);
       setNotes('');
       setSelectedStudents([]);
       setAttendanceDate(new Date().toISOString().split('T')[0]);
@@ -63,16 +56,6 @@ function AttendanceRecorder({ students, onRecordAttendance }) {
       )}
 
       <div className="form-group">
-        <div className="form-field">
-          <label htmlFor="className">Class Name</label>
-          <input
-            id="className"
-            type="text"
-            placeholder="e.g., Math 101, English Class A"
-            value={className}
-            onChange={(e) => setClassName(e.target.value)}
-          />
-        </div>
         <div className="form-field">
           <label htmlFor="attendanceDate">Date</label>
           <input

@@ -8,12 +8,10 @@ function ExportImport({ attendance, students, onDataImported }) {
   const exportToCSV = () => {
     const studentMap = Object.fromEntries(students.map((s) => [s.id, s.name]));
 
-    let csv = 'Date,Class,Student Name,Present,Notes\n';
+    let csv = 'Date,Student Name,Notes\n';
     attendance.forEach((record) => {
       const studentName = studentMap[record.studentId] || 'Unknown';
-      csv += `${record.date},"${record.className}","${studentName}","${
-        record.present ? 'Yes' : 'No'
-      }","${(record.notes || '').replace(/"/g, '""')}"\n`;
+      csv += `${record.date},"${studentName}","${(record.notes || '').replace(/"/g, '""')}"\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -130,9 +128,7 @@ function ExportImport({ attendance, students, onDataImported }) {
       // Validate CSV format
       const requiredColumns = [
         'Date',
-        'Class',
-        'Student Name',
-        'Present',
+        'Student Name'
       ];
       const hasRequiredColumns = requiredColumns.every((col) =>
         headers.some((h) => h.includes(col))
@@ -141,7 +137,7 @@ function ExportImport({ attendance, students, onDataImported }) {
       if (!hasRequiredColumns) {
         setMessage({
           type: 'error',
-          text: 'Invalid CSV format. Missing required columns: Date, Class, Student Name, Present',
+          text: 'Invalid CSV format. Missing required columns: Date, Student Name',
         });
         return;
       }
@@ -153,15 +149,11 @@ function ExportImport({ attendance, students, onDataImported }) {
         const values = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
 
         const dateIdx = headers.findIndex((h) => h.includes('Date'));
-        const classIdx = headers.findIndex((h) => h.includes('Class'));
         const studentIdx = headers.findIndex((h) => h.includes('Student'));
-        const presentIdx = headers.findIndex((h) => h.includes('Present'));
 
         records.push({
           date: values[dateIdx],
-          className: values[classIdx],
           studentName: values[studentIdx],
-          present: values[presentIdx].toLowerCase() === 'yes',
           notes: values[headers.findIndex((h) => h.includes('Notes'))] || '',
         });
       }
@@ -185,9 +177,7 @@ function ExportImport({ attendance, students, onDataImported }) {
         if (student) {
           await attendanceAPI.recordAttendance(
             student.id,
-            record.className,
             record.date,
-            record.present,
             record.notes
           );
         }
@@ -236,9 +226,7 @@ function ExportImport({ attendance, students, onDataImported }) {
           <thead>
             <tr>
               <th>Date</th>
-              <th>Class</th>
               <th>Student Name</th>
-              <th>Status</th>
               <th>Notes</th>
             </tr>
           </thead>
@@ -249,9 +237,7 @@ function ExportImport({ attendance, students, onDataImported }) {
       html += `
         <tr>
           <td>${new Date(record.date).toLocaleDateString()}</td>
-          <td>${record.className}</td>
           <td>${studentMap[record.studentId] || 'Unknown'}</td>
-          <td>${record.present ? 'Present' : 'Absent'}</td>
           <td>${record.notes || '-'}</td>
         </tr>
       `;
@@ -327,7 +313,7 @@ function ExportImport({ attendance, students, onDataImported }) {
       <div style={{ marginTop: '30px', padding: '20px', background: '#f8f9fa', borderRadius: '5px' }}>
         <h3>ℹ️ Import Guidelines</h3>
         <ul>
-          <li><strong>CSV Format:</strong> Must include columns: Date, Class, Student Name, Present, Notes</li>
+          <li><strong>CSV Format:</strong> Must include columns: Date, Student Name, Notes (optional)</li>
           <li><strong>JSON Format:</strong> Must contain "students" and "attendance" arrays</li>
           <li><strong>Duplicate Handling:</strong> New students will be added, attendance records will be appended</li>
           <li><strong>Data Validation:</strong> Invalid files will be rejected with an error message</li>

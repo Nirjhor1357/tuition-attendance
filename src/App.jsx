@@ -51,10 +51,10 @@ function App() {
     }
   };
 
-  const handleRecordAttendance = async (studentIds, className, date, notes = '') => {
+  const handleRecordAttendance = async (studentIds, date, notes = '') => {
     try {
       for (const studentId of studentIds) {
-        await attendanceAPI.recordAttendance(studentId, className, date, true, notes);
+        await attendanceAPI.recordAttendance(studentId, date, notes);
       }
       await loadData();
     } catch (error) {

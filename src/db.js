@@ -6,8 +6,7 @@ export const db = new Dexie('TuitionAttendanceDB');
 // Define the database schema
 db.version(1).stores({
   students: '++id, name',
-  attendance: '++id, date, studentId, className',
-  classes: '++id, name'
+  attendance: '++id, date, studentId'
 });
 
 // Student management functions
@@ -35,12 +34,10 @@ export const studentAPI = {
 
 // Attendance management functions
 export const attendanceAPI = {
-  async recordAttendance(studentId, className, date, present = true, notes = '') {
+  async recordAttendance(studentId, date, notes = '') {
     return db.attendance.add({
       studentId,
-      className,
       date,
-      present,
       notes,
       createdAt: new Date()
     });
@@ -58,9 +55,7 @@ export const attendanceAPI = {
     return db.attendance.where('studentId').equals(studentId).toArray();
   },
 
-  async getAttendanceByClass(className) {
-    return db.attendance.where('className').equals(className).toArray();
-  },
+
 
   async updateAttendance(id, updates) {
     return db.attendance.update(id, { ...updates, updatedAt: new Date() });
@@ -75,24 +70,7 @@ export const attendanceAPI = {
   }
 };
 
-// Class management functions
-export const classAPI = {
-  async addClass(name) {
-    return db.classes.add({ name, createdAt: new Date() });
-  },
 
-  async getAllClasses() {
-    return db.classes.toArray();
-  },
-
-  async updateClass(id, name) {
-    return db.classes.update(id, { name, updatedAt: new Date() });
-  },
-
-  async deleteClass(id) {
-    return db.classes.delete(id);
-  }
-};
 
 // Analytics functions
 export const analyticsAPI = {
@@ -103,31 +81,22 @@ export const analyticsAPI = {
     return Math.round((presentCount / records.length) * 100);
   },
 
-  async getClassStatistics(className) {
-    const records = await db.attendance.where('className').equals(className).toArray();
-    const students = new Set(records.map(r => r.studentId)).size;
-    const sessions = new Set(records.map(r => r.date)).size;
-    return {
-      totalRecords: records.length,
-      studentCount: students,
-      sessionCount: sessions,
-      presentCount: records.filter(r => r.present).length
-    };
-  },
+
 
   async getTotalStatistics() {
     const records = await db.attendance.toArray();
     const students = new Set(records.map(r => r.studentId)).size;
-    const classes = new Set(records.map(r => r.className)).size;
     const sessions = new Set(records.map(r => r.date)).size;
-    const presentCount = records.filter(r => r.present).length;
     return {
       totalRecords: records.length,
       studentCount: students,
-      classCount: classes,
-      sessionCount: sessions,
-      presentCount: presentCount
+      sessionCount: sessions
     };
+  },
+
+  async getStudentClassCount(studentId) {
+    const records = await db.attendance.where('studentId').equals(studentId).toArray();
+    return records.length;
   }
 };
 
